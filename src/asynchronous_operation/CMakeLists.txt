@@ -1,0 +1,64 @@
+add_executable(asynchronous_operation
+               asynchronous_operation.cpp)
+target_link_libraries(asynchronous_operation
+                      Threads::Threads)
+add_executable(asynchronous_operation_naive
+               asynchronous_operation_naive.cpp)
+target_link_libraries(asynchronous_operation_naive
+                      Threads::Threads)
+add_executable(asynchronous_operation_associators
+               asynchronous_operation_associators.cpp)
+target_link_libraries(asynchronous_operation_associators
+                      Threads::Threads)
+add_executable(asynchronous_operation_base
+               asynchronous_operation_base.cpp)
+target_link_libraries(asynchronous_operation_base
+                      Threads::Threads)
+add_executable(asynchronous_operation_base_2
+               asynchronous_operation_base_2.cpp)
+target_link_libraries(asynchronous_operation_base_2
+                      Threads::Threads)
+add_executable(asynchronous_operation_universal
+               asynchronous_operation_universal.cpp)
+target_link_libraries(asynchronous_operation_universal
+                      Threads::Threads)
+add_executable(asynchronous_operation_testable
+               asynchronous_operation_testable.cpp)
+target_link_libraries(asynchronous_operation_testable
+                      Threads::Threads)
+add_executable(asynchronous_operation_testable_2
+               asynchronous_operation_testable_2.cpp)
+target_link_libraries(asynchronous_operation_testable_2
+                      Threads::Threads)
+add_executable(asynchronous_operation_new
+               asynchronous_operation_new.cpp)
+target_link_libraries(asynchronous_operation_new
+                      Threads::Threads)
+add_executable(asynchronous_operation_new_function
+               asynchronous_operation_new_function.cpp)
+target_link_libraries(asynchronous_operation_new_function
+                      Threads::Threads)
+add_executable(asynchronous_operation_testable_new
+               asynchronous_operation_testable_new.cpp)
+target_link_libraries(asynchronous_operation_testable_new
+                      Threads::Threads)
+add_executable(asynchronous_operation_read
+               asynchronous_operation_read.cpp)
+target_link_libraries(asynchronous_operation_read
+                      Threads::Threads)
+add_executable(asynchronous_operation_associators_new
+               asynchronous_operation_associators_new.cpp)
+target_link_libraries(asynchronous_operation_associators_new
+                      Threads::Threads)
+add_executable(asynchronous_operation_get_executor_new
+               asynchronous_operation_get_executor_new.cpp)
+target_link_libraries(asynchronous_operation_get_executor_new
+                      Threads::Threads)
+add_executable(asynchronous_operation_universal_new
+               asynchronous_operation_universal_new.cpp)
+target_link_libraries(asynchronous_operation_universal_new
+                      Threads::Threads)
+add_executable(asynchronous_operation_strand
+               asynchronous_operation_strand.cpp)
+target_link_libraries(asynchronous_operation_strand
+                      Threads::Threads)

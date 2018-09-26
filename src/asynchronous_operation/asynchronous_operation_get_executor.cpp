@@ -13,12 +13,9 @@ using namespace experimental::net;
 
 }
 
-using namespace std;
-using namespace std::chrono;
-using namespace std::net;
-
-template<typename AsyncWriteStream, typename ConstBufferSequence, typename Handler>
+template<typename WaitableTimer, typename AsyncWriteStream, typename ConstBufferSequence, typename Handler>
 struct write_op {
+  WaitableTimer& timer_;
   AsyncWriteStream& sock_;
   ConstBufferSequence cb_;
   Handler h_;
@@ -26,49 +23,46 @@ struct write_op {
     if (ec) h_(ec, 0);
     else async_write(sock_, std::move(cb_), std::move(h_));
   }
-};
-
-namespace std::experimental::net {
-
-template<typename AsyncWriteStream, typename ConstBufferSequence, typename Handler, typename Executor>
-struct associated_executor<write_op<AsyncWriteStream, ConstBufferSequence, Handler>, Executor> {
-  using type = associated_executor_t<Handler, Executor>;
-  static auto get(const write_op<AsyncWriteStream, ConstBufferSequence, Handler>& op, const Executor& ex = Executor()) noexcept {
-    return get_associated_executor(op.h_, ex);
+  using executor_type = std::net::associated_executor_t<Handler, decltype(std::declval<WaitableTimer>().get_executor())>;
+  auto get_executor() const noexcept {
+    return std::net::get_associated_executor(h_, timer_.get_executor());
   }
 };
-
-}
 
 template<typename WaitableTimer, typename AsyncWriteStream, typename ConstBufferSequence, typename Handler>
 void async_wait_then_write(WaitableTimer& timer, AsyncWriteStream& s,
   typename WaitableTimer::duration dur, ConstBufferSequence bufs, Handler&& h)
 {
   timer.expires_after(dur);
-  write_op<AsyncWriteStream, ConstBufferSequence, std::decay_t<Handler>> op{s, std::move(bufs), std::forward<Handler>(h)};
+  write_op<WaitableTimer, AsyncWriteStream, ConstBufferSequence, std::decay_t<Handler>> op{timer, s, std::move(bufs), std::forward<Handler>(h)};
   timer.async_wait(std::move(op));
 }
 
 struct heartbeat {
-  system_timer& timer_;
-  ip::tcp::socket& socket_;
-  const byte* buffer_;
-  size_t size_;
-  void operator()(error_code ec = error_code(), size_t written = 0) {
-    if (ec) throw system_error(ec);
-    async_wait_then_write(timer_, socket_, seconds(5), buffer(buffer_, size_), *this);
+  std::net::system_timer& timer_;
+  std::net::ip::tcp::socket& socket_;
+  const std::byte* buffer_;
+  std::size_t size_;
+  void initiate() {
+    async_wait_then_write(timer_, socket_, std::chrono::seconds(5), std::net::buffer(buffer_, size_), *this);
+  }
+  void operator()(std::error_code ec, std::size_t written) {
+    if (ec) throw std::system_error(ec);
+    initiate();
   }
 };
 
 struct process {
-  ip::tcp::socket& socket_;
+  std::net::ip::tcp::socket& socket_;
   std::byte* buffer_;
   std::size_t size_;
-  void operator()(std::error_code ec = {}, std::size_t bytes = 0) {
+  void initiate() {
+    socket_.async_read_some(std::net::buffer(buffer_, size_), *this);
+  }
+  void operator()(std::error_code ec, std::size_t bytes) {
     if (ec) throw std::system_error(ec);
-    std::cout << "Read " << bytes << " bytes" << std::endl;
     //  Process bytes received...
-    socket_.async_read_some(buffer(buffer_, size_), *this);
+    initiate();
   }
 };
 
@@ -86,8 +80,9 @@ int main(int argc,
   std::net::system_timer timer(ctx);
   socket.connect(std::net::ip::tcp::endpoint(std::net::ip::make_address_v4("172.217.7.142"),
                                              80));
-// ...
-heartbeat{timer, socket, write_buffer, sizeof(write_buffer)}();
-process{socket, read_buffer, sizeof(read_buffer)}();
-ctx.run();
+  heartbeat{timer, socket, write_buffer, sizeof(write_buffer)}.initiate();
+  process{socket, read_buffer, sizeof(read_buffer)}.initiate();
+  // Only one thread available to run work
+  // therefore thread safe
+  ctx.run();
 }
